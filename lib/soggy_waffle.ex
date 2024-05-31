@@ -1,18 +1,27 @@
 defmodule SoggyWaffle do
-  @moduledoc """
-  Documentation for `SoggyWaffle`.
-  """
+  defstruct [:weather_api]
 
-  @doc """
-  Hello world.
+  def create_null(attrs \\ []) do
+    default_attrs = %{weather_api: SoggyWaffle.WeatherApi.create_null()}
+    attrs = Enum.into(attrs, default_attrs)
+    struct!(__MODULE__, attrs)
+  end
 
-  ## Examples
+  def create_error_null do
+    weather_api = SoggyWaffle.WeatherApi.create_error_null()
+    create_null(weather_api: weather_api)
+  end
 
-      iex> SoggyWaffle.hello()
-      :world
+  def create do
+    struct!(__MODULE__, weather_api: SoggyWaffle.WeatherApi.create())
+  end
 
-  """
-  def hello do
-    :world
+  def rain?(service \\ create(), city, date_time) do
+    with {:ok, response} <- SoggyWaffle.WeatherApi.get_forecast(service.weather_api, city) do
+      weather_data =
+        SoggyWaffle.WeatherApi.ResponseParser.parse_response(response)
+
+      {:ok, SoggyWaffle.Weather.imminent_rain?(weather_data, date_time)}
+    end
   end
 end
